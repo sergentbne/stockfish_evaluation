@@ -1,56 +1,75 @@
-import stockfish
-import requests
-import os
 from pathlib import Path
-import tarfile
-from io import BytesIO
 
-import subprocess
-
-PATH = Path(".cache/stockfish")
+BINARY_PATH = Path(".cache/stockfish")
 
 
 def main():
+    import stockfish
+
     print("Hello from stockfish-evaluation!")
-    get_stockfish_if_not_there()
-    fish = stockfish.Stockfish(PATH.as_posix(), depth=20)
+    ensure_stockfish_binary()
+
+    # New Stockfish instance starts at default starting position.
+    # No FEN/position set — queries analyze the standard chess startpos.
+    fish = stockfish.Stockfish(BINARY_PATH, depth=20)
 
     print(fish.get_top_moves(3))
-    best_wrapper = list()
     best = fish.get_best_move()
     if best is None:
         return
-    best_wrapper.append(best)
     print(fish.get_board_visual())
-    fish.make_moves_from_current_position(best_wrapper)
+    fish.make_moves_from_current_position([best])
     print(fish.get_board_visual())
 
 
-def get_stockfish_if_not_there():
-    if os.path.exists(PATH):
+def ensure_stockfish_binary():
+    import shutil
+    import subprocess
+    import tarfile
+    from io import BytesIO
+
+    import requests
+
+    if BINARY_PATH.exists():
         return
 
-    PATH.parent.mkdir(exist_ok=True)
-    data = requests.get(
-        "https://github.com/official-stockfish/Stockfish/archive/refs/tags/sf_18.tar.gz"
-    ).content
+    BINARY_PATH.parent.mkdir(exist_ok=True)
+
+    try:
+        response = requests.get(
+            "https://github.com/official-stockfish/Stockfish/archive/refs/tags/sf_18.tar.gz",
+            timeout=30,
+        )
+        response.raise_for_status()
+    except requests.RequestException as e:
+        raise RuntimeError(f"Failed to download Stockfish source: {e}") from e
+
+    data = response.content
     buffer = BytesIO(data)
     buffer.seek(0)
-    with tarfile.open(fileobj=buffer) as tar:
-        tar.extractall(path=PATH.parent)
 
-    current_dir = Path(os.curdir).absolute()
+    try:
+        with tarfile.open(fileobj=buffer) as tar:
+            tar.extractall(path=BINARY_PATH.parent, filter="data")
+    except tarfile.TarError as e:
+        raise RuntimeError(f"Failed to extract Stockfish tarball: {e}") from e
 
-    os.chdir(".cache/Stockfish-sf_18/src")
-    subprocess.run(
-        ["make", "-j", "profile-build"],
-        check=True,
-        capture_output=True,
-    )
-    os.replace("stockfish", current_dir / PATH)
-    os.chdir(current_dir)
+    src = BINARY_PATH.parent / "Stockfish-sf_18/src"
+    try:
+        subprocess.run(
+            ["make", "-j", "profile-build"],
+            cwd=src,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Failed to compile Stockfish:\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
+        ) from e
 
-    return
+    (src / "stockfish").replace(BINARY_PATH)
+    shutil.rmtree(BINARY_PATH.parent / "Stockfish-sf_18", ignore_errors=True)
 
 
 if __name__ == "__main__":
