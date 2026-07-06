@@ -20,7 +20,10 @@ def main():
     fish1 = stockfish.Stockfish(str(BINARY_PATH), depth=20)
     fish2 = stockfish.Stockfish(str(BINARY_PATH), depth=20)
 
-    log.warning(f"{main_loop(fish1, fish2)}, {fish1.get_board_visual()}")
+    main_loop(fish1, fish2)
+
+
+# log.warning(f"{}, {fish1.get_board_visual()}")
 
 
 def ensure_stockfish_binary():
@@ -77,8 +80,8 @@ def main_loop(stockfish1: stockfish.Stockfish, stockfish2: stockfish.Stockfish) 
     iterable_of_stockfish = (stockfish1, stockfish2)
     is_mate = False
     has_fish1_won: bool | None = None
-    moves: list[str | None] = []
-    queue_of_uci: multiprocessing.Queue[str] = multiprocessing.Queue()
+    moves: list[str] = []
+    queue_of_uci: multiprocessing.Queue[str | None] = multiprocessing.Queue()
 
     process = multiprocessing.Process(target=display_moves, args=(queue_of_uci,))
     process.start()
@@ -121,14 +124,14 @@ def display_moves(queue_of_uci: multiprocessing.Queue[str]):
     print("hello")
     while move := queue_of_uci.get(block=True):
         _ = board.push_uci(move)
-        svg_string = chess.svg.board(board, size=350)
+        svg_string = chess.svg.board(board, size=1200)
         svg_buffer = io.BytesIO(svg_string.encode("utf-8"))
         drawing_of_svg = svg2rlg(svg_buffer)
         if drawing_of_svg is None:
             raise Exception("unreachable")
         image_buffer = io.BytesIO()
         _ = renderPM.drawToFile(drawing_of_svg, image_buffer, fmt="png")
-        imgcat.imgcat(image_buffer)
+        imgcat.imgcat(image_buffer.getvalue())
     return
 
 
