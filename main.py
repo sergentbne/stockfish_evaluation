@@ -1,17 +1,17 @@
 from pathlib import Path
 
+import stockfish
+
 BINARY_PATH = Path(".cache/stockfish")
 
 
 def main():
-    import stockfish
-
     print("Hello from stockfish-evaluation!")
     ensure_stockfish_binary()
 
     # New Stockfish instance starts at default starting position.
     # No FEN/position set — queries analyze the standard chess startpos.
-    fish = stockfish.Stockfish(BINARY_PATH, depth=20)
+    fish = stockfish.Stockfish(str(BINARY_PATH), depth=20)
 
     print(fish.get_top_moves(3))
     best = fish.get_best_move()
@@ -46,7 +46,7 @@ def ensure_stockfish_binary():
 
     data = response.content
     buffer = BytesIO(data)
-    buffer.seek(0)
+    _ = buffer.seek(0)
 
     try:
         with tarfile.open(fileobj=buffer) as tar:
@@ -56,7 +56,7 @@ def ensure_stockfish_binary():
 
     src = BINARY_PATH.parent / "Stockfish-sf_18/src"
     try:
-        subprocess.run(
+        _ = subprocess.run(
             ["make", "-j", "profile-build"],
             cwd=src,
             check=True,
@@ -68,7 +68,7 @@ def ensure_stockfish_binary():
             f"Failed to compile Stockfish:\nstdout:\n{e.stdout}\nstderr:\n{e.stderr}"
         ) from e
 
-    (src / "stockfish").replace(BINARY_PATH)
+    _ = (src / "stockfish").replace(BINARY_PATH)
     shutil.rmtree(BINARY_PATH.parent / "Stockfish-sf_18", ignore_errors=True)
 
 
