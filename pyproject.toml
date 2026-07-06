@@ -1,0 +1,14 @@
+[project]
+name = "stockfish-evaluation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "requests>=2.34.2",
+    "stockfish>=5.2.0",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
