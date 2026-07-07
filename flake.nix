@@ -15,6 +15,7 @@
         buildInputs = [
           pkgs.cairo
           pkgs.libxcb
+		  pkgs.gcc
         ];
         nativeBuildInputs = [
           pkgs.pkg-config
@@ -22,6 +23,7 @@
         shellHook = ''
           export PKG_CONFIG_PATH="${pkgs.cairo.dev}/lib/pkgconfig:${pkgs.libxcb.dev}/lib/pkgconfig:$PKG_CONFIG_PATH"
           export DYLD_FALLBACK_LIBRARY_PATH="${pkgs.cairo}/lib:$DYLD_FALLBACK_LIBRARY_PATH"
+		  alias g++="clang++"
         '';
       };
     };
