@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 
 def main():
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(processes=5) as pool:
         all_numbers: list[tuple[int, int]] = []
         for i in range(1, 6):
             for y in range(1, 6):
@@ -29,6 +29,7 @@ def main():
 def create_results_from_loop_with_depth(depths: tuple[int, int]):
     fish1 = Stockfish(str(BINARY_PATH), depth=depths[0])
     fish2 = Stockfish(str(BINARY_PATH), depth=depths[1])
+    print("hello")
     all_moves = main_loop(fish1, fish2, display_moves=False)
     board = chess.Board()
     for i in all_moves:
