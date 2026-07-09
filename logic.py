@@ -1,7 +1,9 @@
 import multiprocessing
-from typing import Any
 
+import chess
 import stockfish
+from commons import BINARY_PATH
+from stockfish_downloader import ensure_stockfish_binary
 
 
 class _NoopQueue:
@@ -10,51 +12,51 @@ class _NoopQueue:
 
 
 def main_loop(
-    stockfish1: stockfish.Stockfish,
-    stockfish2: stockfish.Stockfish,
+    depth_of_stockfish1: int,
+    depth_of_stockfish2: int,
     display_moves: bool = True,
-) -> list[str]:
-    iterable_of_stockfish = (stockfish1, stockfish2)
-    is_mate = False
-    moves: list[str] = list()
+) -> chess.Board:
+    ensure_stockfish_binary()
 
+    iterable_of_stockfish = (depth_of_stockfish1, depth_of_stockfish2)
+
+    turn = 0  # index of iterable that will get modulo'd with 2
+    engine = stockfish.Stockfish(str(BINARY_PATH))
+    board = chess.Board()
+    board.reset_board()
+    process: multiprocessing.Process | None = None
+    queue_of_uci: multiprocessing.Queue[str | None] | _NoopQueue = _NoopQueue()
     if display_moves:
-        queue_of_uci: multiprocessing.Queue[str | None] | _NoopQueue = multiprocessing.Queue()
+        queue_of_uci = multiprocessing.Queue()
         process = multiprocessing.Process(target=display_moves_init, args=(queue_of_uci,))
         process.start()
 
     else:
         queue_of_uci = _NoopQueue()  # type: ignore[assignment]
         process = None
+    while not board.is_game_over():
+        engine.set_depth(iterable_of_stockfish[turn])
+        turn = (turn + 1) % 2
+        move = engine.get_best_move()
+        if move is None:
+            raise Exception("Unreachable")
 
-    while not is_mate:
-        if move := stockfish1.get_best_move():
-            apply_moves_to_all_fishes([move], iterable_of_stockfish)
-            queue_of_uci.put(move)
-            moves.append(move)
-        else:
-            is_mate = True
-            queue_of_uci.put(None)
-            break
-
-        if move := stockfish2.get_best_move():
-            apply_moves_to_all_fishes([move], iterable_of_stockfish)
-            queue_of_uci.put(move)
-            moves.append(move)
-        else:
-            is_mate = True
-            queue_of_uci.put(None)
-            break
+        engine.make_moves_from_current_position([move])
+        queue_of_uci.put(move)
+        _ = board.push_uci(move)
 
     if display_moves:
+        if process is None:
+            raise Exception("Unreachable")
+
+        queue_of_uci.put(None)
         process.join()
         process.close()
 
-    return moves
+    return board
 
 
 def display_moves_init(queue_of_uci: multiprocessing.Queue[str]):
-    import chess
     import chess.svg
 
     board = chess.Board()

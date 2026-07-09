@@ -1,15 +1,14 @@
+{ pkgs, lib, config, inputs, ... }:
 {
-	  languages.python = {
-		 
-	version = "3.14";   
-	enable = true;
-	venv.enable = true	
-	uv = {
-		  
-	enable = true;
-	sync.enable = true;
-		
-	};
-	  
-	};
+	packages = [
+	  pkgs.cairo
+	  pkgs.libxcb
+	  pkgs.gcc
+	  pkgs.pkg-config
+	];
+  cachix.enable = false;
+  languages.python = {
+    enable = true;
+    # version = "3.12"; 
+  };
 }

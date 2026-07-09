@@ -1,13 +1,6 @@
-from typing import final
-
-from stockfish import Stockfish
-
-from commons import BINARY_PATH
 from logic import main_loop
 
 import multiprocessing
-import chess
-from tqdm import tqdm
 
 
 def main():
@@ -16,24 +9,17 @@ def main():
         for i in range(1, 6):
             for y in range(1, 6):
                 all_numbers.append((i, y))
-        for i in tqdm(
-            pool.imap(
-                create_results_from_loop_with_depth,
+        maps = (
+            pool.map(
+                create_results_from_loop_with_depths,
                 all_numbers,
             ),
-            total=len(all_numbers),
-        ):
-            print(i)
+        )
+        print(maps)
 
 
-def create_results_from_loop_with_depth(depths: tuple[int, int]):
-    fish1 = Stockfish(str(BINARY_PATH), depth=depths[0])
-    fish2 = Stockfish(str(BINARY_PATH), depth=depths[1])
-    print("hello")
-    all_moves = main_loop(fish1, fish2, display_moves=False)
-    board = chess.Board()
-    for i in all_moves:
-        _ = board.push_uci(i)
+def create_results_from_loop_with_depths(depths: tuple[int, int]):
+    board = main_loop(depths[0], depths[1], display_moves=False)
     outcome_of_game = board.outcome()
     return outcome_of_game
 
