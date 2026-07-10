@@ -16,7 +16,6 @@ def main_loop(
     depth_of_stockfish2: int,
     display_moves: bool = True,
 ) -> chess.Board:
-    ensure_stockfish_binary()
 
     iterable_of_stockfish = (depth_of_stockfish1, depth_of_stockfish2)
 
@@ -82,14 +81,3 @@ def display_image_to_screen(image_bytes: bytes):
     import imgcat
 
     imgcat.imgcat(image_bytes)
-
-
-def apply_moves_to_all_fishes(
-    move: list[str],
-    fishes: tuple[
-        stockfish.Stockfish,
-        stockfish.Stockfish,
-    ],
-) -> None:
-    for fish in fishes:
-        fish.make_moves_from_current_position(move)

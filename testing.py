@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
+from stockfish_downloader import ensure_stockfish_binary
 from logic import main_loop
 
 MIN_DEPTH = 1
@@ -13,12 +14,13 @@ MAX_DEPTH = 20
 
 
 def main():
+    ensure_stockfish_binary()
     depths = list(range(MIN_DEPTH, MAX_DEPTH + 1))
     depths.reverse()
     n = len(depths)
     score_matrix = np.full((n, n), np.nan)
 
-    with multiprocessing.Pool(processes=5) as pool:
+    with multiprocessing.Pool() as pool:
         all_pairs = [(w, b) for w in depths for b in depths]
         results = list(
             tqdm(
@@ -45,15 +47,26 @@ def main():
 
 
 def game_result(depths: tuple[int, int]) -> bool | None:
+    import chess.pgn
+    from chess.pgn import FileExporter
+
+    game_path = Path(f"data/games/white_{depths[0]}-black_{depths[1]}.pgn")
+    game_path.parent.mkdir(exist_ok=True, parents=True)
     board = main_loop(depths[0], depths[1], display_moves=False)
     outcome = board.outcome()
     if outcome is None:
         return None
+
+    game = chess.pgn.Game().from_board(board)
+    with open(game_path, "w") as f:
+        visitor = FileExporter(f)
+        game.accept(visitor)
+
     return outcome.winner
 
 
 def plot_heatmap(score_matrix: np.ndarray, depths: list[int]):
-    path_heatmap = Path("graphs/depth_heatmap.png")
+    path_heatmap = Path("data/graphs/depth_heatmap.png")
     fig, ax = plt.subplots(figsize=(8, 7))
     im = ax.imshow(
         score_matrix,
@@ -81,7 +94,7 @@ def plot_heatmap(score_matrix: np.ndarray, depths: list[int]):
 
 
 def plot_aggregate(score_matrix: np.ndarray, depths: list[int]):
-    aggregate_path = Path("graphs/depth_aggregate.png")
+    aggregate_path = Path("data/graphs/depth_aggregate.png")
     n = len(depths)
     white_win_rates = np.zeros(n)
     black_win_rates = np.zeros(n)
