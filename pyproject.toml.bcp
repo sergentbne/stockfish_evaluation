@@ -1,0 +1,35 @@
+[project]
+name = "stockfish-evaluation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Louis Turpault"},
+]
+dependencies = [
+    "cairosvg>=2.9.0",
+    "chess>=1.11.2",
+    "imgcat>=0.6.0",
+    "matplotlib>=3.11.0",
+    "numpy>=2.5.1",
+    "pillow>=12.3.0",
+    "requests>=2.34.2",
+    "stockfish>=5.2.0",
+    "tqdm>=4.68.4",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "W"]
+
+[tool.ruff.format]
+quote-style = "double"
