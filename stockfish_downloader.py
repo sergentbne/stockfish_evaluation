@@ -16,7 +16,7 @@ def ensure_stockfish_binary():
 
     try:
         response = requests.get(
-            "https://github.com/official-stockfish/Stockfish/archive/refs/tags/sf_18.tar.gz",
+            "https://github.com/official-stockfish/Stockfish/archive/refs/heads/master.tar.gz",
             timeout=30,
         )
         response.raise_for_status()
@@ -33,7 +33,7 @@ def ensure_stockfish_binary():
     except tarfile.TarError as e:
         raise RuntimeError(f"Failed to extract Stockfish tarball: {e}") from e
 
-    src = BINARY_PATH.parent / "Stockfish-sf_18/src"
+    src = BINARY_PATH.parent / "Stockfish-master/src"
     try:
         _ = subprocess.run(
             ["make", "-j", "profile-build"],
