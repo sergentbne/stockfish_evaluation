@@ -1,6 +1,7 @@
 import multiprocessing
 from pathlib import Path
 
+from chess import Board
 from matplotlib.image import AxesImage
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +11,7 @@ from stockfish_downloader import ensure_stockfish_binary
 from logic import main_loop
 
 MIN_DEPTH = 1
-MAX_DEPTH = 20
+MAX_DEPTH = 25
 
 
 def main():
@@ -50,17 +51,26 @@ def game_result(depths: tuple[int, int]) -> bool | None:
     import chess.pgn
     from chess.pgn import FileExporter
 
+    board = Board()
     game_path = Path(f"data/games/white_{depths[0]}-black_{depths[1]}.pgn")
     game_path.parent.mkdir(exist_ok=True, parents=True)
-    board = main_loop(depths[0], depths[1], display_moves=False)
+    if game_path.exists():
+        print(f"found file for {depths=}, loading result and returning")
+        game = chess.pgn.read_game(open(game_path))
+        if game is None:
+            raise FileNotFoundError("Opened file is invalid somehow")
+        board = game.end().board()
+    else:
+        print(f"file for {depths=} has not been found, let the best win!")
+        board = main_loop(depths[0], depths[1], display_moves=False)
+
+        game = chess.pgn.Game().from_board(board)
+        with open(game_path, "w") as f:
+            visitor = FileExporter(f)
+            _ = game.accept(visitor)
     outcome = board.outcome()
     if outcome is None:
         return None
-
-    game = chess.pgn.Game().from_board(board)
-    with open(game_path, "w") as f:
-        visitor = FileExporter(f)
-        game.accept(visitor)
 
     return outcome.winner
 
