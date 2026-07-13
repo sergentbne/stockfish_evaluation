@@ -4,7 +4,7 @@ run:
 	uv run main.py
 
 clean:
-	rm -rf .cache .venv __pycache__
+	rm -rf .cache .venv __pycache__ data
 
 install:
 	@echo "TODO"
